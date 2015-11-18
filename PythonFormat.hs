@@ -63,8 +63,9 @@ joinString = removeTerminalComma
 
 joinOrSplit :: String -> String
 joinOrSplit s
-    | (length . lines) s > 1 = joinString s
-    | otherwise = formatString s
+    | (length . lines) l > 1 = joinString l
+    | otherwise = formatString l
+    where l = rstrip s
 
 main :: IO ()
 main = getContents >>= putStr . joinOrSplit
