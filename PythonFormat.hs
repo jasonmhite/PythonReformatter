@@ -1,10 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Main (main, formatString) where
+module Main where
 
 import Control.Monad.State hiding (join)
 import Data.String.Utils -- MissingH
 import Data.List (filter)
-import Debug.Trace
 
 type ReaderState = (String, Int, Int, Int) -- out, (, [, {
 
