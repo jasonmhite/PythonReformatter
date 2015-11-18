@@ -7,15 +7,12 @@ import Data.String.Utils -- MissingH
 import Data.List (filter)
 import Data.Char (isSpace)
 
--- TODO : Need to read the initial indent and preserve that
--- TODO : Also need to preserve trailing characters after the close is found
-
 type ReaderState = (String, String, String, Int, Int, Int) -- out, close, indent, (, [, {
 
-advanceHead :: String -> State ReaderState (String, String)
+advanceHead :: String -> State ReaderState String
 advanceHead "" = do
-    (out, _, ind, _, _, _) <- get
-    return (out, ind)
+    (out, _, _, _, _, _) <- get
+    return out
     
 -- Effectively a state machine that reads characters off a tape, hence the name
 advanceHead (x:xs) = do
@@ -47,9 +44,6 @@ advanceHead (x:xs) = do
 
 startState :: ReaderState
 startState = ("", "", "", 0, 0, 0)
-
-breakLines :: String -> (String, String)
-breakLines s = evalState (advanceHead s) startState
 
 addTerminalComma :: [String] -> [String]
 addTerminalComma [] = []
@@ -83,18 +77,20 @@ indentLines x  = let fline = head x
                       ++ map (indentChar ++) ins
                       ++ [lline]
 
-z (x, y) = (lines x, y)
-
--- TODO : Reformat to use a state monad, make the composes binds
 formatString :: String -> String
-formatString = unlines
-                . addTerminalComma
-                . indentLines
-                . (\(x, i) -> map (i ++) x)
-                . (\(x, i) -> (filter (/= "") x, i))
-                . (\(x, i) -> (map strip x, i))
-                . (\(x, i)  -> (lines x, i))
-                . breakLines
+formatString s = evalState (
+                    advanceHead s
+                        >>= return . lines
+                        >>= return . (map strip)
+                        >>= return . (filter (/= ""))
+                        >>= \a -> do
+                                    (_, _, ind, _, _, _) <- get
+                                    return $ map (++ ind) a
+                        >>= return . indentLines
+                        >>= return . addTerminalComma
+                        >>= return . unlines
+                    ) startState
+
 
 -- Currently a bit broken, at least as a vim filter, hence disabled
 removeTerminalComma :: String -> String
